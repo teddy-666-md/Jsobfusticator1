@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>JS Obfuscator Tool</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #0f172a;
+      color: white;
+      text-align: center;
+      padding: 30px;
+    }
+    .box {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 10px;
+      width: 500px;
+      margin: auto;
+    }
+    input, button {
+      margin-top: 10px;
+      padding: 10px;
+      width: 90%;
+    }
+    button {
+      cursor: pointer;
+      background: #22c55e;
+      border: none;
+      color: white;
+      font-weight: bold;
+    }
+    button:hover {
+      background: #16a34a;
+    }
+  </style>
+</head>
+<body>
+
+<div class="box">
+  <h2>JavaScript Obfuscator</h2>
+
+  <input type="file" id="fileInput" accept=".js" />
+
+  <button onclick="obfuscateFile()">Obfuscate File</button>
+
+  <button id="downloadBtn" style="display:none;" onclick="downloadFile()">
+    Download Obfuscated File
+  </button>
+</div>
+
+<script>
+let outputCode = "";
+
+// Base64 encoder
+function encode(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
+// simple string obfuscation
+function obfuscate(code) {
+  let strings = [];
+
+  const replaced = code.replace(/(["'`])((?:\\.|(?!\1).)*?)\1/g, (m, q, str) => {
+    const idx = strings.length;
+    strings.push(encode(str));
+    return `__s(${idx})`;
+  });
+
+  return `
+const __pool = ${JSON.stringify(strings)};
+const __s = i => atob(__pool[i]);
+
+${replaced}
+`;
+}
+
+function obfuscateFile() {
+  const file = document.getElementById("fileInput").files[0];
+
+  if (!file) {
+    alert("Please select a JS file");
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = function(e) {
+    const code = e.target.result;
+    outputCode = obfuscate(code);
+
+    document.getElementById("downloadBtn").style.display = "block";
+    alert("Obfuscation complete!");
+  };
+
+  reader.readAsText(file);
+}
+
+function downloadFile() {
+  const blob = new Blob([outputCode], { type: "text/javascript" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "obfuscated.js";
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+</script>
+
+</body>
+</html>
